@@ -1,5 +1,6 @@
 import os
 import pickle
+import asyncio
 
 
 class PersistantList:
@@ -15,6 +16,7 @@ class PersistantList:
                 self._list = pickle.load(f)
         else:
             self._list = list()
+        self._lock = asyncio.Lock()
 
     def _persist(self):
         with open(self._list_file, "wb") as f:
@@ -23,13 +25,15 @@ class PersistantList:
     def __repr__(self):
         return str(self._list)
 
-    def append(self, value):
-        self._list.append(value)
-        self._persist()
+    async def append(self, value):
+        async with self._lock:
+            self._list.append(value)
+            self._persist()
 
-    def remove(self, value):
-        self._list.remove(value)
-        self._persist()
+    async def remove(self, value):
+        async with self._lock:
+            self._list.remove(value)
+            self._persist()
 
     def __contains__(self, value):
         return value in self._list
